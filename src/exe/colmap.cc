@@ -143,6 +143,7 @@ int main(int argc, char** argv) {
   commands.emplace_back("vocab_tree_builder", &RunVocabTreeBuilder);
   commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher);
   commands.emplace_back("vocab_tree_retriever", &RunVocabTreeRetriever);
+  commands.emplace_back("incremental_model_refiner", &RunIncrementalModelRefiner);
 
   if (argc == 1) {
     return ShowHelp(commands);

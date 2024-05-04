@@ -715,4 +715,162 @@ int RunRigBundleAdjuster(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
+int RunIncrementalModelRefiner(int argc, char** argv) {
+  std::string input_path;
+  std::string output_path;
+  std::string image_list_path;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddImageOptions();
+  options.AddRequiredOption("input_path", &input_path);
+  options.AddRequiredOption("output_path", &output_path);
+  options.AddDefaultOption("image_list_path", &image_list_path);  
+  options.AddMapperOptions();
+  options.Parse(argc, argv);
+
+  if (!ExistsDir(input_path)) {
+    std::cerr << "ERROR: `input_path` is not a directory" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (!ExistsDir(output_path)) {
+    std::cerr << "ERROR: `output_path` is not a directory" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  const auto& mapper_options = *options.mapper;
+
+  PrintHeading1("Loading model");
+
+  Reconstruction reconstruction;
+  reconstruction.Read(input_path);
+
+  // Loads the list of images for which the camera pose will be fixed.
+  std::vector<image_t> image_ids_fixed_poses;
+  if (!image_list_path.empty()) {
+    const auto image_names = ReadTextFileLines(image_list_path);
+    for (const std::string& image_name : image_names) {
+      const Image* image = reconstruction.FindImageWithName(image_name);
+      if (image != nullptr) {
+        image_ids_fixed_poses.push_back(image->ImageId());
+      }
+      
+    }
+  }
+
+  PrintHeading1("Loading database");
+
+  DatabaseCache database_cache;
+
+  {
+    Timer timer;
+    timer.Start();
+
+    Database database(*options.database_path);
+
+    const size_t min_num_matches =
+        static_cast<size_t>(mapper_options.min_num_matches);
+    database_cache.Load(database, min_num_matches,
+                        mapper_options.ignore_watermarks,
+                        mapper_options.image_names);
+
+    std::cout << std::endl;
+    timer.PrintMinutes();
+  }
+
+  std::cout << std::endl;
+
+  IncrementalMapper mapper(&database_cache);
+  mapper.BeginReconstruction(&reconstruction);
+
+  CHECK_GE(reconstruction.NumRegImages(), 2)
+      << "Need at least two images for refinement";
+
+  const std::vector<image_t>& reg_image_ids = reconstruction.RegImageIds();
+
+  auto ba_options = mapper_options.GlobalBundleAdjustment();
+  // Configure bundle adjustment.
+  BundleAdjustmentConfig ba_config;
+  for (const image_t image_id : reg_image_ids) {
+    ba_config.AddImage(image_id);
+  }
+
+  // Fix the assigned images:
+  if (mapper_options.fix_existing_images) {
+    // Triangulation mode
+    for (const image_t image_id : image_ids_fixed_poses) {
+        ba_config.SetConstantPose(image_id);
+        Image& current_image = reconstruction.Image(image_id);
+
+        if (mapper_options.ba_global_use_pba) {
+        // Fix all images' poses and intrins
+          if (!ba_config.IsConstantCamera(current_image.CameraId())){
+            ba_config.SetConstantCamera(current_image.CameraId());
+          }
+        }
+
+        const std::string& image_name = reconstruction.Image(image_id).Name();
+        std::cout << StringPrintf("  => Fixed the pose of image: %s", image_name.c_str()) << std::endl;
+      }
+    }
+
+  else {
+    int i = 0;
+    for (const image_t image_id : image_ids_fixed_poses) {
+      if (i == 0) {
+        ba_config.SetConstantPose(image_id);
+        const std::string& image_name = reconstruction.Image(image_id).Name();
+        // It return reference of str!
+        std::cout << StringPrintf("  => Fixed the pose of image: %s", image_name.c_str()) << std::endl;
+      } else if (i == 1) {
+        ba_config.SetConstantTvec(image_id, {0});
+        const std::string& image_name = reconstruction.Image(image_id).Name();
+        std::cout << StringPrintf("  => Fixed the 1 Dim of image: %s", image_name.c_str())
+                  << std::endl;
+      }
+      i++;
+  }
+  }
+
+  for (int i = 0; i < mapper_options.ba_global_max_refinements; ++i) {   
+
+    // Avoid degeneracies in bundle adjustment.
+    reconstruction.FilterObservationsWithNegativeDepth();
+
+    const size_t num_observations = reconstruction.ComputeNumObservations();
+
+    PrintHeading1("Bundle adjustment");
+    if (mapper_options.ba_global_use_pba && ParallelBundleAdjuster::IsSupported(ba_options, reconstruction)) {
+      ParallelBundleAdjuster bundle_adjuster(mapper_options.ParallelGlobalBundleAdjustment(), ba_options, ba_config);
+      CHECK(bundle_adjuster.Solve(&reconstruction));
+    } else {
+      BundleAdjuster bundle_adjuster(ba_options, ba_config);
+      CHECK(bundle_adjuster.Solve(&reconstruction));
+    }
+
+    size_t num_changed_observations = 0;
+    num_changed_observations += CompleteAndMergeTracks(mapper_options, &mapper);
+    num_changed_observations += FilterPoints(mapper_options, &mapper);
+    const double changed =
+        static_cast<double>(num_changed_observations) / num_observations;
+    std::cout << StringPrintf("  => Changed observations: %.6f", changed)
+              << std::endl;
+    if (changed < mapper_options.ba_global_max_refinement_change) {
+      break;
+    }
+
+  }
+
+  PrintHeading1("Extracting colors");
+  reconstruction.ExtractColorsForAllImages(*options.image_path);
+
+  const bool kDiscardReconstruction = false;
+  mapper.EndReconstruction(kDiscardReconstruction);
+
+  reconstruction.Write(output_path);
+
+  return EXIT_SUCCESS;
+}
+
 }  // namespace colmap
