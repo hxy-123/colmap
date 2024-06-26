@@ -1,7 +1,3 @@
-if(NOT IS_MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-endif()
-
 add_definitions("-DSIFTGPU_NO_DEVIL")
 
 set(SIFT_GPU_SOURCE_FILES
@@ -41,9 +37,9 @@ if(CUDA_ENABLED)
         SiftMatchCU.h
     )
 
-    COLMAP_ADD_STATIC_CUDA_LIBRARY(sift_gpu ${SIFT_GPU_SOURCE_FILES})
+    COLMAP_ADD_CUDA_LIBRARY(sift_gpu ${SIFT_GPU_SOURCE_FILES})
 else()
-    COLMAP_ADD_STATIC_LIBRARY(sift_gpu ${SIFT_GPU_SOURCE_FILES})
+    COLMAP_ADD_LIBRARY(sift_gpu ${SIFT_GPU_SOURCE_FILES})
 endif()
 
 target_link_libraries(sift_gpu

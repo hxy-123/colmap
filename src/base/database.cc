@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -715,7 +715,7 @@ void Database::WriteTwoViewGeometry(
   // Invert the two-view geometry if the image pair has to be swapped.
   std::unique_ptr<TwoViewGeometry> swapped_two_view_geometry;
   if (SwapImagePair(image_id1, image_id2)) {
-    swapped_two_view_geometry.reset(new TwoViewGeometry());
+    swapped_two_view_geometry = std::make_unique<TwoViewGeometry>();
     *swapped_two_view_geometry = two_view_geometry;
     swapped_two_view_geometry->Invert();
     two_view_geometry_ptr = swapped_two_view_geometry.get();

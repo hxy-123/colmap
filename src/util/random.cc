@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@ thread_local std::unique_ptr<std::mt19937> PRNG;
 int kDefaultPRNGSeed = 0;
 
 void SetPRNGSeed(unsigned seed) {
-  PRNG.reset(new std::mt19937(seed));
+  PRNG = std::make_unique<std::mt19937>(seed);
   // srand is not thread-safe.
   static std::mutex mutex;
   std::unique_lock<std::mutex> lock(mutex);

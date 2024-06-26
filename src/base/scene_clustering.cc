@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ void SceneClustering::Partition(
     edges.emplace_back(image_pair.first, image_pair.second);
   }
 
-  root_cluster_.reset(new Cluster());
+  root_cluster_ = std::make_unique<Cluster>();
   root_cluster_->image_ids.insert(root_cluster_->image_ids.end(),
                                   image_ids.begin(), image_ids.end());
   if (options_.is_hierarchical) {

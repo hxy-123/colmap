@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -954,7 +954,10 @@ void UndistortImage(const UndistortCameraOptions& options,
 void UndistortReconstruction(const UndistortCameraOptions& options,
                              Reconstruction* reconstruction) {
   const auto distorted_cameras = reconstruction->Cameras();
-  for (auto& camera : distorted_cameras) {
+  for (const auto& camera : distorted_cameras) {
+    if (camera.second.IsUndistorted()) {
+      continue;
+    }
     reconstruction->Camera(camera.first) =
         UndistortCamera(options, camera.second);
   }

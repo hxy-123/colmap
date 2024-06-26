@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -250,8 +250,8 @@ struct OpenCVCameraModel : public BaseCameraModel<OpenCVCameraModel> {
 
 // OpenCV fish-eye camera model.
 //
-// Based on the pinhole camera model. Additionally models radial and
-// tangential Distortion (up to 2nd degree of coefficients). Suitable for
+// Based on the pinhole camera model. Additionally models radial distortion
+// (up to 4th degree of coefficients). Suitable for
 // large radial distortions of fish-eye cameras.
 //
 // Parameter list is expected in the following order:

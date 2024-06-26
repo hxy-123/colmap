@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ class RandomSampler : public Sampler {
 
   size_t MaxNumSamples() override;
 
-  std::vector<size_t> Sample() override;
+  void Sample(std::vector<size_t>* sampled_idxs) override;
 
  private:
   const size_t num_samples_;

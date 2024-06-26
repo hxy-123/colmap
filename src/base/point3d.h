@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,7 @@ class Point3D {
 
   inline const class Track& Track() const;
   inline class Track& Track();
-  inline void SetTrack(const class Track& track);
+  inline void SetTrack(class Track track);
 
  private:
   // The 3D position of the point.
@@ -131,7 +131,7 @@ class Track& Point3D::Track() {
   return track_;
 }
 
-void Point3D::SetTrack(const class Track& track) { track_ = track; }
+void Point3D::SetTrack(class Track track) { track_ = std::move(track); }
 
 }  // namespace colmap
 

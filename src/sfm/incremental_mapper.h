@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -206,12 +206,9 @@ class IncrementalMapper {
       const IncrementalTriangulator::Options& tri_options,
       const image_t image_id, const std::unordered_set<point3D_t>& point3D_ids);
 
-  // Global bundle adjustment using Ceres Solver or PBA.
+  // Global bundle adjustment using Ceres Solver.
   bool AdjustGlobalBundle(const Options& options,
                           const BundleAdjustmentOptions& ba_options);
-  bool AdjustParallelGlobalBundle(
-      const BundleAdjustmentOptions& ba_options,
-      const ParallelBundleAdjuster::Options& parallel_ba_options);
 
   // Filter images and point observations.
   size_t FilterImages(const Options& options);

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -168,9 +168,9 @@ void StereoFusion::Run() {
       workspace_path_, workspace_options.stereo_folder, "fusion.cfg"));
   int num_threads = 1;
   if (options_.use_cache) {
-    workspace_.reset(new CachedWorkspace(workspace_options));
+    workspace_ = std::make_unique<CachedWorkspace>(workspace_options);
   } else {
-    workspace_.reset(new Workspace(workspace_options));
+    workspace_ = std::make_unique<Workspace>(workspace_options);
     workspace_->Load(image_names);
     num_threads = GetEffectiveNumThreads(options_.num_threads);
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 #include <fstream>
 #include <memory>
 
-#include "FLANN/flann.hpp"
+#include "flann/flann.hpp"
 #if !defined(GUI_ENABLED) && !defined(CUDA_ENABLED)
 #include "GL/glew.h"
 #endif
@@ -793,9 +793,13 @@ bool CreateSiftGPUExtractor(const SiftExtractionOptions& options,
   sift_gpu_args.push_back("-v");
   sift_gpu_args.push_back("0");
 
-  // Fixed maximum image dimension.
+  // Set maximum image dimension.
+  // Note the max dimension of SiftGPU is the maximum dimension of the
+  // first octave in the pyramid (which is the 'first_octave').
+  const int compensation_factor = 1 << -std::min(0, options.first_octave);
   sift_gpu_args.push_back("-maxd");
-  sift_gpu_args.push_back(std::to_string(options.max_image_size));
+  sift_gpu_args.push_back(
+      std::to_string(options.max_image_size * compensation_factor));
 
   // Keep the highest level features.
   sift_gpu_args.push_back("-tc2");
@@ -839,8 +843,8 @@ bool CreateSiftGPUExtractor(const SiftExtractionOptions& options,
 
   sift_gpu->gpu_index = gpu_indices[0];
   if (sift_extraction_mutexes.count(gpu_indices[0]) == 0) {
-    sift_extraction_mutexes.emplace(
-        gpu_indices[0], std::unique_ptr<std::mutex>(new std::mutex()));
+    sift_extraction_mutexes.emplace(gpu_indices[0],
+                                    std::make_unique<std::mutex>());
   }
 
   return sift_gpu->VerifyContextGL() == SiftGPU::SIFTGPU_FULL_SUPPORTED;
@@ -854,7 +858,12 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
   CHECK(bitmap.IsGrey());
   CHECK_NOTNULL(keypoints);
   CHECK_NOTNULL(descriptors);
-  CHECK_EQ(options.max_image_size, sift_gpu->GetMaxDimension());
+
+  // Note the max dimension of SiftGPU is the maximum dimension of the
+  // first octave in the pyramid (which is the 'first_octave').
+  const int compensation_factor = 1 << -std::min(0, options.first_octave);
+  CHECK_EQ(options.max_image_size * compensation_factor,
+           sift_gpu->GetMaxDimension());
 
   CHECK(!options.estimate_affine_shape);
   CHECK(!options.domain_size_pooling);
@@ -1141,8 +1150,8 @@ bool CreateSiftGPUMatcher(const SiftMatchingOptions& match_options,
 
   sift_match_gpu->gpu_index = gpu_indices[0];
   if (sift_matching_mutexes.count(gpu_indices[0]) == 0) {
-    sift_matching_mutexes.emplace(
-        gpu_indices[0], std::unique_ptr<std::mutex>(new std::mutex()));
+    sift_matching_mutexes.emplace(gpu_indices[0],
+                                  std::make_unique<std::mutex>());
   }
 
   return true;

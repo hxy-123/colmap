@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -367,9 +367,9 @@ int RunPointTriangulator(int argc, char** argv) {
   Reconstruction reconstruction;
   reconstruction.Read(input_path);
 
-  return RunPointTriangulatorImpl(
-      reconstruction, *options.database_path, *options.image_path, output_path,
-      *options.mapper, clear_points);
+  return RunPointTriangulatorImpl(reconstruction, *options.database_path,
+                                  *options.image_path, output_path,
+                                  *options.mapper, clear_points);
 }
 
 int RunPointTriangulatorImpl(Reconstruction& reconstruction,
@@ -801,15 +801,6 @@ int RunIncrementalModelRefiner(int argc, char** argv) {
     // Triangulation mode
     for (const image_t image_id : image_ids_fixed_poses) {
         ba_config.SetConstantPose(image_id);
-        Image& current_image = reconstruction.Image(image_id);
-
-        if (mapper_options.ba_global_use_pba) {
-        // Fix all images' poses and intrins
-          if (!ba_config.IsConstantCamera(current_image.CameraId())){
-            ba_config.SetConstantCamera(current_image.CameraId());
-          }
-        }
-
         const std::string& image_name = reconstruction.Image(image_id).Name();
         std::cout << StringPrintf("  => Fixed the pose of image: %s", image_name.c_str()) << std::endl;
       }
@@ -841,13 +832,8 @@ int RunIncrementalModelRefiner(int argc, char** argv) {
     const size_t num_observations = reconstruction.ComputeNumObservations();
 
     PrintHeading1("Bundle adjustment");
-    if (mapper_options.ba_global_use_pba && ParallelBundleAdjuster::IsSupported(ba_options, reconstruction)) {
-      ParallelBundleAdjuster bundle_adjuster(mapper_options.ParallelGlobalBundleAdjustment(), ba_options, ba_config);
-      CHECK(bundle_adjuster.Solve(&reconstruction));
-    } else {
-      BundleAdjuster bundle_adjuster(ba_options, ba_config);
-      CHECK(bundle_adjuster.Solve(&reconstruction));
-    }
+    BundleAdjuster bundle_adjuster(ba_options, ba_config);
+    CHECK(bundle_adjuster.Solve(&reconstruction));
 
     size_t num_changed_observations = 0;
     num_changed_observations += CompleteAndMergeTracks(mapper_options, &mapper);

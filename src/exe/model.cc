@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
+// Copyright (c) 2023, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -956,7 +956,7 @@ int RunModelSplitter(int argc, char** argv) {
                 << std::endl;
       const std::string reconstruction_path = JoinPaths(output_path, name);
       CreateDirIfNotExists(reconstruction_path);
-      reconstruction.Write(reconstruction_path);
+      tile_recon.Write(reconstruction_path);
       WriteBoundingBox(reconstruction_path, bounds[idx]);
       WriteBoundingBox(reconstruction_path, exact_bounds[idx], "_exact");
 
